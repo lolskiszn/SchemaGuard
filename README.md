@@ -25,7 +25,7 @@ npx schemaguard generate -i schema.sql -o guards.ts
 Your database schema and TypeScript types drift apart. SchemaGuard keeps them in sync:
 
 - **Runtime validation** - Type guards generated from your actual DB schema
-- **CI drift detection** - Fail your build when schema changes aren't reflected in types
+- **CI drift detection** - Fail your build when schema drift is detected
 - **Zero config needed** - Works out of the box with PostgreSQL CREATE TABLE
 
 ## Quick Start
@@ -61,7 +61,7 @@ Create `.schemaguard.json` in your project root:
 }
 ```
 
-## GitHub Action: Fail on Schema Drift
+## GitHub Action: Fail When Schema Drift Is Detected
 
 Add to `.github/workflows/schema-guard.yml`:
 
