@@ -33,6 +33,73 @@ for (let i = 0; i < args.length; i++) {
   else if (arg === '--include') CLIOpts.include = args[++i].split(',');
   else if (arg === '--exclude') CLIOpts.exclude = args[++i].split(',');
   else if (arg === '--prisma') CLIOpts.format = 'prisma';
+  else if (arg === '--fix') CLIOpts.fix = true;
+  else if (arg === '--report') CLIOpts.report = true;
+}
+
+// Fix mode: auto-heal known SQL syntax issues
+if (CLIOpts.fix && CLIOpts.input) {
+  let sql = require('fs').readFileSync(CLIOpts.input, 'utf-8');
+  
+  // Fix common SQL syntax issues
+  const fixes = [
+    { pattern: /SERIAL\s+AUTO_INCREMENT/gi, replacement: 'SERIAL' },
+    { pattern: /BIGSERIAL\s+AUTO_INCREMENT/gi, replacement: 'BIGSERIAL' },
+    { pattern: /CHARACTER\s+VARYING/gi, replacement: 'VARCHAR' },
+    { pattern: /CHAR\s+VARYING/gi, replacement: 'VARCHAR' },
+    { pattern: /WITH\s+TIME\s+ZONE/gi, replacement: 'WITH TIME ZONE' },
+    { pattern: /WITHOUT\s TIME\s+ZONE/gi, replacement: 'WITHOUT TIME ZONE' },
+    { pattern: /timestamp\s+without/gi, replacement: 'TIMESTAMP WITHOUT' },
+    { pattern: /timestamp\s+with/gi, replacement: 'TIMESTAMP WITH' },
+  ];
+  
+  let fixed = false;
+  for (const f of fixes) {
+    if (f.pattern.test(sql)) {
+      sql = sql.replace(f.pattern, f.replacement);
+      fixed = true;
+    }
+  }
+  
+  if (fixed) {
+    require('fs').writeFileSync(CLIOpts.input + '.bak', require('fs').readFileSync(CLIOpts.input, 'utf-8'));
+    require('fs').writeFileSync(CLIOpts.input, sql);
+    console.log('✅ Auto-fixed SQL syntax issues (backup saved to *.bak)');
+  }
+}
+
+// Drift report mode: show what would change
+if (CLIOpts.report && CLIOpts.input) {
+  const sql = require('fs').readFileSync(CLIOpts.input, 'utf-8');
+  const { parseSchema } = require('../lib/parser/index.js');
+  const { generateTypeDefs } = require('../lib/generator/guard-builder.js');
+  const prevTypes = CLIOpts.output && require('fs').existsSync(CLIOpts.output) 
+    ? require('fs').readFileSync(CLIOpts.output, 'utf-8') 
+    : null;
+  
+  const ast = parseSchema(sql);
+  const newTypes = generateTypeDefs(ast);
+  
+  console.log('\n╔════════════════════════════════════════╗');
+  console.log('║       Schema Drift Report           ║');
+  console.log('╚════════════════════════════════════════╝\n');
+  
+  // Check for additions
+  const prevLines = prevTypes ? prevTypes.split('\n').filter(l => l.match(/^export (type|const)/)) : [];
+  const newLines = newTypes.split('\n').filter(l => l.match(/^export (type|const)/));
+  
+  const prevNames = prevLines.map(l => l.match(/(\w+)\s*=/)?.[1] || l.match(/(\w+)\s*=/)?.[1]).filter(Boolean);
+  const newNames = newLines.map(l => l.match(/(\w+)\s*=/)?.[1] || l.match(/(\w+)\s*=/)?.[1]).filter(Boolean);
+  
+  const added = newNames.filter(n => !prevNames.includes(n));
+  const removed = prevNames.filter(n => !newNames.includes(n));
+  
+  if (added.length) console.log('📦 New types: ' + added.join(', '));
+  if (removed.length) console.log('🗑️  Removed: ' + removed.join(', '));
+  if (!added.length && !removed.length) console.log('✅ No type changes detected');
+  
+  console.log('\nRun "schemaguard generate" to update types.');
+  process.exit(0);
 }
 
 const config = mergeConfig(CLIOpts);
@@ -55,6 +122,8 @@ Options:
   -v, --verbose       Verbose output
   --include <tables>  Comma-separated tables to include
   --exclude <tables>  Comma-separated tables to exclude
+  --fix              Auto-fix common SQL syntax issues
+  --prisma          Parse as Prisma schema
 
 Config (place .schemaguard.json in project root):
   include: ["users", "posts"]     # Tables to process
