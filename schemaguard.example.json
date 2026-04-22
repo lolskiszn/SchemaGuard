@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schemaguard.dev/config/v1",
+  "include": ["users", "posts", "accounts"],
+  "exclude": ["_prisma_migrations", "audit_log"],
+  "output": {
+    "format": "esm",
+    "namespace": "Schema",
+    "exportAll": true
+  },
+  "typeMappings": {
+    "uuid": "string",
+    "jsonb": "object"
+  },
+  "naming": {
+    "column": "camelCase",
+    "type": "PascalCase"
+  }
+}

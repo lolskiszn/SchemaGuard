@@ -1,0 +1,28 @@
+{
+  "name": "schemaguard",
+  "version": "1.0.0",
+  "description": "Generate TypeScript type guards from database schemas",
+  "main": "./bin/schemaguard",
+  "scripts": {
+    "test": "node test/schema.test.js",
+    "start": "node bin/schemaguard"
+  },
+  "keywords": [
+    "typescript",
+    "type-guards",
+    "schema",
+    "database",
+    "postgresql"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "pg": "^8.20.0"
+  }
+}

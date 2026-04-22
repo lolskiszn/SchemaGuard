@@ -1,0 +1,16 @@
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  name VARCHAR(100),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE posts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT,
+  published BOOLEAN DEFAULT false,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
