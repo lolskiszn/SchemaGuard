@@ -18,6 +18,8 @@
 ```bash
 npm install schemaguard
 npx schemaguard generate -i schema.sql -o guards.ts
+# or start the guided onboarding wizard
+npx schemaguard init
 ```
 
 ## Why SchemaGuard?
@@ -33,6 +35,30 @@ Your database schema and TypeScript types drift apart. SchemaGuard keeps them in
 ```bash
 # Generate type guards from SQL schema
 npx schemaguard generate -i schema.sql -o src/schema.ts
+```
+
+### Guided onboarding wizard (new)
+
+Run the interactive onboarding flow to bootstrap from a live PostgreSQL database:
+
+```bash
+npx schemaguard init
+```
+
+The wizard will:
+
+1. Ask for your database URL and validate the connection.
+2. Detect tables from `public` schema.
+3. Let you choose include/exclude tables interactively.
+4. Auto-generate:
+   - `schema.sql` (discovered table definitions)
+   - `.schemaguard.json` (saved include/exclude config)
+   - `schema.ts` (first generated type guards)
+
+Quick wizard path:
+
+```text
+Database URL → include tables → exclude tables → generate files
 ```
 
 That's it! Import and validate at runtime:
