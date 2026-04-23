@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Generated output
+*.tsbuildinfo
+*.bak
+
+# Local env / logs
+.env
+.env.*
+npm-debug.log*

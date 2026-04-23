@@ -14,10 +14,16 @@ const args = process.argv.slice(2);
 // Quick exit for init - before normal config loading
 if (args[0] === 'init') {
   (async () => {
-    const { init } = require('../lib/init.js');
-    await init();
+    try {
+      const { init } = require('../lib/init.js');
+      await init();
+      process.exit(0);
+    } catch (err) {
+      console.error('Error:', err.message);
+      process.exit(1);
+    }
   })();
-  process.exit(0);
+  return;
 }
 
 // Build config from file + CLI args
@@ -141,14 +147,6 @@ Example:
 
 if (args[0] === '--version') {
   console.log('schemaguard v1.0.0');
-  process.exit(0);
-}
-
-if (args[0] === 'init') {
-  (async () => {
-    const { init } = require('../lib/init.js');
-    await init();
-  })();
   process.exit(0);
 }
 
