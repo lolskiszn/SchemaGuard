@@ -26,7 +26,7 @@ Your database schema and TypeScript types drift apart. SchemaGuard keeps them in
 
 - **Runtime validation** - Type guards generated from your actual DB schema
 - **CI drift detection** - Fail your build when schema drift is detected
-- **Zero config needed** - Works out of the box with PostgreSQL CREATE TABLE
+- **Multi-format parsing** - Works with PostgreSQL SQL, MySQL SQL, and Prisma schema inputs
 
 ## Quick Start
 
@@ -38,10 +38,16 @@ npx schemaguard generate -i schema.sql -o src/schema.ts
 That's it! Import and validate at runtime:
 
 ```typescript
-import { isUsers, isPosts } from './schema';
+import { isUsers } from './schema';
+
+type Users = {
+  id: number;
+  email: string;
+  name?: string | null;
+};
 
 // API response validation
-function handle UsersResponse(data: unknown): Users {
+function handleUsersResponse(data: unknown): Users {
   if (!isUsers(data)) throw new Error('Invalid response');
   return data;
 }
@@ -79,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -103,16 +109,17 @@ jobs:
 
 This workflow fails when your database schema changes but `src/schema.ts` wasn't updated.
 
-## Supported SQL
+## Supported Inputs
 
-- **PostgreSQL** - Full support
-- Column types: `SERIAL`, `VARCHAR(n)`, `TEXT`, `BOOLEAN`, `TIMESTAMP`, `UUID`, `JSONB`, `DECIMAL`
-- Constraints: `PRIMARY KEY`, `NOT NULL`, `UNIQUE`, `DEFAULT`, table-level `FOREIGN KEY`
+- **PostgreSQL SQL** - `CREATE TABLE` parsing and type guard generation
+- **MySQL SQL** - common MySQL table syntax support (`AUTO_INCREMENT`, `DECIMAL`, etc.)
+- **Prisma schema** - pass `--prisma` to parse Prisma model definitions
+- **Enums** - SQL `CREATE TYPE ... AS ENUM` mapped to TypeScript union literals
 
 ## Limitations
 
 - Inline FOREIGN KEY (`REFERENCES`) not supported - use table-level constraints
-- MySQL/Prisma schema - deferred
+- Parser coverage is broad but not exhaustive for every dialect edge-case
 
 ## License
 
