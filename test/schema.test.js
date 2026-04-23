@@ -3,17 +3,24 @@
  * Tests real CLI flow on sample inputs
  */
 
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const { writeFileSync, unlinkSync } = require('fs');
 
-const CLI = 'node bin/schemaguard';
+const CLI = 'bin/schemaguard';
 
-function run(cmd) {
-  try {
-    return execSync(cmd, { encoding: 'utf-8', cwd: __dirname + '/..' });
-  } catch (e) {
-    return e.stdout || e.message;
-  }
+function run(args) {
+  const result = spawnSync('node', [CLI, ...args], {
+    encoding: 'utf-8',
+    cwd: __dirname + '/..',
+  });
+
+  return {
+    status: result.status,
+    stdout: result.stdout || '',
+    stderr: result.stderr || '',
+    combined: `${result.stdout || ''}${result.stderr || ''}`,
+    error: result.error,
+  };
 }
 
 function test(name, fn) {
@@ -34,9 +41,11 @@ function assert(condition, msg) {
 test('PostgreSQL: generates type guards', () => {
   const sql = `CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL, name VARCHAR(100));`;
   writeFileSync('/tmp/test.sql', sql);
-  const out = run(`${CLI} generate -i /tmp/test.sql`);
-  assert(out.includes('export type Users'), 'Missing Users type');
-  assert(out.includes('export const isUsers'), 'Missing isUsers guard');
+  const out = run(['generate', '-i', '/tmp/test.sql']);
+  assert(!out.error, `Process error: ${out.error?.message || 'unknown'}`);
+  assert(out.status === 0, `Expected exit code 0, got ${out.status}. stderr: ${out.stderr}`);
+  assert(out.stdout.includes('export type Users'), 'Missing Users type');
+  assert(out.stdout.includes('export const isUsers'), 'Missing isUsers guard');
   unlinkSync('/tmp/test.sql');
 });
 
@@ -44,9 +53,11 @@ test('PostgreSQL: generates type guards', () => {
 test('MySQL: generates type guards', () => {
   const sql = `CREATE TABLE products (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, price DECIMAL(10,2));`;
   writeFileSync('/tmp/test.sql', sql);
-  const out = run(`${CLI} generate -i /tmp/test.sql`);
-  assert(out.includes('export type Products'), 'Missing Products type');
-  assert(out.includes('id: number'), 'Missing id type');
+  const out = run(['generate', '-i', '/tmp/test.sql']);
+  assert(!out.error, `Process error: ${out.error?.message || 'unknown'}`);
+  assert(out.status === 0, `Expected exit code 0, got ${out.status}. stderr: ${out.stderr}`);
+  assert(out.stdout.includes('export type Products'), 'Missing Products type');
+  assert(out.stdout.includes('id: number'), 'Missing id type');
   unlinkSync('/tmp/test.sql');
 });
 
@@ -54,9 +65,11 @@ test('MySQL: generates type guards', () => {
 test('ENUM: generates union type', () => {
   const sql = `CREATE TYPE status AS ENUM ('active', 'inactive', 'pending');`;
   writeFileSync('/tmp/test.sql', sql);
-  const out = run(`${CLI} generate -i /tmp/test.sql`);
-  assert(out.includes("'active'"), 'Missing active value');
-  assert(out.includes("'inactive'"), 'Missing inactive value');
+  const out = run(['generate', '-i', '/tmp/test.sql']);
+  assert(!out.error, `Process error: ${out.error?.message || 'unknown'}`);
+  assert(out.status === 0, `Expected exit code 0, got ${out.status}. stderr: ${out.stderr}`);
+  assert(out.stdout.includes("'active'"), 'Missing active value');
+  assert(out.stdout.includes("'inactive'"), 'Missing inactive value');
   unlinkSync('/tmp/test.sql');
 });
 
@@ -64,9 +77,11 @@ test('ENUM: generates union type', () => {
 test('Prisma: generates type guards', () => {
   const schema = `model User { id Int @id email String name String? }`;
   writeFileSync('/tmp/test.prisma', schema);
-  const out = run(`${CLI} generate -i /tmp/test.prisma --prisma`);
-  assert(out.includes('export type User'), 'Missing User type');
-  assert(out.includes('email: string'), 'Missing email field');
+  const out = run(['generate', '-i', '/tmp/test.prisma', '--prisma']);
+  assert(!out.error, `Process error: ${out.error?.message || 'unknown'}`);
+  assert(out.status === 0, `Expected exit code 0, got ${out.status}. stderr: ${out.stderr}`);
+  assert(out.stdout.includes('export type User'), 'Missing User type');
+  assert(out.stdout.includes('email: string'), 'Missing email field');
   unlinkSync('/tmp/test.prisma');
 });
 
@@ -74,8 +89,10 @@ test('Prisma: generates type guards', () => {
 test('Error: fails on invalid syntax', () => {
   const sql = `CREATE DATABASE test`;
   writeFileSync('/tmp/test.sql', sql);
-  const result = run(`${CLI} generate -i /tmp/test.sql`);
-  assert(result.includes('Error') || result.includes('Expected'), 'Should report error');
+  const result = run(['generate', '-i', '/tmp/test.sql']);
+  assert(!result.error, `Process error: ${result.error?.message || 'unknown'}`);
+  assert(result.status === 1, `Expected exit code 1, got ${result.status}`);
+  assert(result.stderr.includes('Error:') || result.stderr.includes('Expected'), 'Should report parser error to stderr');
   unlinkSync('/tmp/test.sql');
 });
 
