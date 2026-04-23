@@ -77,7 +77,7 @@ if (CLIOpts.report && CLIOpts.input) {
     ? require('fs').readFileSync(CLIOpts.output, 'utf-8') 
     : null;
   
-  const ast = parseSchema(sql);
+  const ast = parseSchema(sql, CLIOpts.format || 'sql');
   const newTypes = generateTypeDefs(ast);
   
   console.log('\n╔════════════════════════════════════════╗');
@@ -169,14 +169,14 @@ try {
   const sql = readFileSync(config.input, 'utf-8');
   if (config.verbose) console.error('Parsing SQL...');
 
-  let tables = parseSchema(sql, config.format === 'prisma' ? 'prisma' : 'sql');
+  let tables = parseSchema(sql, CLIOpts.format || 'sql');
 
-  // Apply include/exclude filters
-  if (config.include && config.include.length > 0) {
-    tables = tables.filter(t => config.include.includes(t.name));
+  // Apply include/exclude filters only when explicitly provided (check for real array, not just config defaults)
+  if (CLIOpts.include && Array.isArray(CLIOpts.include) && CLIOpts.include.length > 0) {
+    tables = tables.filter(t => CLIOpts.include.includes(t.name));
   }
-  if (config.exclude && config.exclude.length > 0) {
-    tables = tables.filter(t => !config.exclude.includes(t.name));
+  if (CLIOpts.exclude && Array.isArray(CLIOpts.exclude) && CLIOpts.exclude.length > 0) {
+    tables = tables.filter(t => !CLIOpts.exclude.includes(t.name));
   }
 
   if (tables.length === 0) {
