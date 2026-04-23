@@ -44,6 +44,7 @@ if (CLIOpts.fix && CLIOpts.input) {
   // Fix common SQL syntax issues
   const fixes = [
     { pattern: /SERIAL\s+AUTO_INCREMENT/gi, replacement: 'SERIAL' },
+    { pattern: /DOUBLE PRECISION/gi, replacement: 'DOUBLE' },
     { pattern: /BIGSERIAL\s+AUTO_INCREMENT/gi, replacement: 'BIGSERIAL' },
     { pattern: /CHARACTER\s+VARYING/gi, replacement: 'VARCHAR' },
     { pattern: /CHAR\s+VARYING/gi, replacement: 'VARCHAR' },
